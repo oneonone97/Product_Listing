@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seller Admin Page</title>
+    <style>
+        body {
+        font-family: Arial, sans-serif;
+        }
+
+        #app {
+        max-width: 800px;
+        margin: 20px auto;
+        }
+
+        section {
+        margin-bottom: 20px;
+        }
+
+        form {
+        display: flex;
+        flex-direction: column;
+        max-width: 300px;
+        }
+
+        label {
+        margin-bottom: 5px;
+        }
+
+    </style>
+</head>
+<body>
+    <div id="app">
+
+        <section id="add-product-section">
+            <h2>Add Product</h2>
+            <form id="add-product-form">
+                <!-- Form for adding a new product -->
+                <label for="productName">Product Name:</label>
+                <input type="text" id="productName" name="productName" required>
+
+                <label for="productPrice">Price:</label>
+                <input type="number" id="productPrice" name="productPrice" required>
+
+                <label for="productCategory">Category:</label>
+                <select name="category" id="category">
+                <option value="Food">Food</option>
+                <option value="Electronics">Electronics</option>
+                <option value="Dress">Dress</option>
+                <option value="Fashion">Fashion</option>
+                </select>
+
+                <button type="button" onclick="addProduct()">Add Product</button>
+            </form>
+        </section>
+
+        <section id="product-list-section">
+            <h2>Product List</h2>
+            <table id="productTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Price</th>
+                        <th>Category</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="productTableBody"></tbody>
+            </table>
+        </section>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+            // CRUDCRUD API base URL
+        const apiUrl = 'https://crudcrud.com/api/85d9a81e46bc428898ed7be6c9fcadb5';
+
+        // Function to add a new product
+        function addProduct() {
+        const productName = document.getElementById('productName').value;
+        const productPrice = document.getElementById('productPrice').value;
+        const productCategory = document.getElementById('productCategory').value;
+
+        // Make a POST request to add the product
+        axios.post(`https://crudcrud.com/api/85d9a81e46bc428898ed7be6c9fcadb5/products`, {
+            name: productName,
+            price: productPrice,
+            category: productCategory
+        })
+        .then(response => {
+            // Handle the success response (e.g., show a success message)
+            console.log(response.data);
+            alert('Product added successfully!');
+            // Clear the form
+            document.getElementById('add-product-form').reset();
+            // Refresh the product table
+            getProducts();
+            })
+            .catch(error => {
+            // Handle errors (e.g., show an error message)
+            console.error('Error adding product:', error);
+            alert('Error adding product. Please try again.');
+            });
+        }
+
+// Function to get all products
+function getProducts() {
+    // Make a GET request to retrieve all products
+    axios.get(`https://crudcrud.com/api/85d9a81e46bc428898ed7be6c9fcadb5/products`)
+    .then(response => {
+        // Update the product table with the retrieved data
+        displayProducts(response.data);
+    })
+    .catch(error => {
+        // Handle errors (e.g., show an error message)
+        console.error('Error getting products:', error);
+        alert('Error getting products. Please try again.');
+    });
+}
+
+// Function to display products in the table
+function displayProducts(products) {
+    const tableBody = document.getElementById('productTableBody');
+    tableBody.innerHTML = '';
+
+    products.forEach(product => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${product._id}</td>
+            <td>${product.name}</td>
+            <td>${product.price}</td>
+            <td>${product.category}</td>
+            <td>
+                <button onclick="editProduct('${product._id}')">Edit</button>
+                <button onclick="deleteProduct('${product._id}')">Delete</button>
+            </td>
+        `;
+        tableBody.appendChild(row);
+    });
+}
+
+// Function to delete a product
+function deleteProduct(productId) {
+    // Make a DELETE request to delete the product
+    axios.delete(`https://crudcrud.com/api/85d9a81e46bc428898ed7be6c9fcadb5/products/${productId}`)
+    .then(response => {
+        // Handle the success response (e.g., show a success message)
+        console.log(response.data);
+        alert('Product deleted successfully!');
+        // Refresh the product table
+        getProducts();
+    })
+    .catch(error => {
+        // Handle errors (e.g., show an error message)
+        console.error(`Error deleting product ${productId}:`, error);
+        alert('Error deleting product. Please try again.');
+    });
+}
+
+// Function to edit a product (load data into the form for editing)
+function editProduct(productId) {
+    // Make a GET request to retrieve the product details
+    axios.get(`https://crudcrud.com/api/85d9a81e46bc428898ed7be6c9fcadb5/products/${productId}`)
+    .then(response => {
+        // Populate the form with the product details for editing
+        const product = response.data;
+        document.getElementById('productName').value = product.name;
+        document.getElementById('productPrice').value = product.price;
+        document.getElementById('productCategory').value = product.category;
+
+        // Provide a way to update the product with a PUT request
+        const updateButton = document.createElement('button');
+        updateButton.innerText = 'Update Product';
+        updateButton.onclick = function () {
+            updateProduct(product._id);
+        };
+
+        // Append the update button to the form
+        const form = document.getElementById('add-product-form');
+        form.appendChild(updateButton);
+    })
+    .catch(error => {
+        // Handle errors (e.g., show an error message)
+        console.error(`Error getting product ${productId} details:`, error);
+        alert('Error getting product details. Please try again.');
+    });
+}
+
+// Function to update a product
+function updateProduct(productId) {
+    const productName = document.getElementById('productName').value;
+    const productPrice = document.getElementById('productPrice').value;
+    const productCategory = document.getElementById('productCategory').value;
+
+    // Make a PUT request to update the product
+    axios.put(`https://crudcrud.com/api/85d9a81e46bc428898ed7be6c9fcadb5/products/${productId}`, {
+        name: productName,
+        price: productPrice,
+        category: productCategory
+    })
+    .then(response => {
+        // Handle the success response (e.g., show a success message)
+        console.log(response.data);
+        alert('Product updated successfully!');
+        // Clear the form and remove the update button
+        document.getElementById('add-product-form').reset();
+        document.getElementById('add-product-form').removeChild(document.querySelector('button'));
+        // Refresh the product table
+        getProducts();
+    })
+    .catch(error => {
+        // Handle errors (e.g., show an error message)
+        console.error(`Error updating product ${productId}:`, error);
+        alert('Error updating product. Please try again.');
+    });
+}
+
+// Initial load of products when the page loads
+getProducts();
+
+    </script>
+</body>
+</html>
